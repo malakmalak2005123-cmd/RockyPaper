@@ -18,7 +18,21 @@
       <button id="scissors">Scissors ✌️</button>
     </div>
 
-    <pre id="result">Make your move to start!</pre>
+    <div id="result-area" class="result-area hidden">
+      <div class="result-card">
+        <span class="player-label">You</span>
+        <div id="user-icon" class="choice-icon">❔</div>
+      </div>
+
+      <div class="result-message">
+        <h2 id="round-status">VS</h2>
+      </div>
+
+      <div class="result-card">
+        <span class="player-label">Computer</span>
+        <div id="computer-icon" class="choice-icon">❔</div>
+      </div>
+    </div>
 
     <div class="scoreboard">
       <p>Wins <span id="wins">0</span></p>

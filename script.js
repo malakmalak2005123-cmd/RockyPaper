@@ -1,5 +1,5 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
+// Object.defineProperty(exports, "__esModule", { value: true });
 var choices = ["rock", "paper", "scissors"];
 var userScore = 0;
 var computerScore = 0;
@@ -7,22 +7,92 @@ var wins = Number(localStorage.getItem("rpsWins")) || 0;
 var losses = Number(localStorage.getItem("rpsLosses")) || 0;
 var draws = Number(localStorage.getItem("rpsDraws")) || 0;
 var bestScore = Number(localStorage.getItem("bestScore")) || 0;
+
+// Visual Elements Variables
+var resultArea = document.getElementById("result-area");
+var userIcon = document.getElementById("user-icon");
+var computerIcon = document.getElementById("computer-icon");
+var roundStatus = document.getElementById("round-status");
+var userCard = userIcon.parentElement;
+var computerCard = computerIcon.parentElement;
+
+var emojis = {
+    rock: "✊",
+    paper: "✋",
+    scissors: "✌️"
+};
+
 function getComputerChoice() {
     var randomIndex = Math.floor(Math.random() * choices.length);
     return choices[randomIndex];
 }
+function showLoadingState() {
+    resultArea.classList.remove("hidden");
+
+    // Set to Rock & Shake
+    userIcon.textContent = "✊";
+    computerIcon.textContent = "✊";
+
+    userCard.classList.add("shuffle");
+    computerCard.classList.add("shuffle");
+
+    // Reset other classes
+    userCard.classList.remove("winner", "loser", "draw");
+    computerCard.classList.remove("winner", "loser", "draw");
+
+    roundStatus.textContent = "Wait... ⏳";
+    roundStatus.style.color = "#94a3b8";
+}
+
+function updateBattlefield(userChoice, computerChoice, result) {
+    resultArea.classList.remove("hidden");
+
+    // Remove Shake
+    userCard.classList.remove("shuffle");
+    computerCard.classList.remove("shuffle");
+
+    // Update Icons
+    userIcon.textContent = emojis[userChoice];
+    computerIcon.textContent = emojis[computerChoice];
+
+    // Reset Classes
+    userCard.classList.remove("winner", "loser", "draw");
+    computerCard.classList.remove("winner", "loser", "draw");
+
+    // Apply Effects & Message
+    if (result === "win") {
+        userCard.classList.add("winner");
+        computerCard.classList.add("loser");
+        roundStatus.textContent = "YOU WIN! 🎉";
+        roundStatus.style.color = "#a855f7";
+    } else if (result === "lose") {
+        userCard.classList.add("loser");
+        computerCard.classList.add("winner");
+        roundStatus.textContent = "YOU LOSE 😢";
+        roundStatus.style.color = "#ef4444";
+    } else {
+        userCard.classList.add("draw");
+        computerCard.classList.add("draw");
+        roundStatus.textContent = "DRAW 🤝";
+        roundStatus.style.color = "#94a3b8";
+    }
+}
+
 function playRound(userChoice) {
+    showLoadingState(); // Start Animation
+
     var computerChoice = getComputerChoice();
-    var message = "";
+    var result = ""; // Fixed: result instead of message
+
     if (userChoice === computerChoice) {
-        message = "It's a Draw! 🤝";
+        result = "draw";
         draws++;
         localStorage.setItem("rpsDraws", draws.toString());
     }
     else if ((userChoice === "rock" && computerChoice === "scissors") ||
         (userChoice === "paper" && computerChoice === "rock") ||
         (userChoice === "scissors" && computerChoice === "paper")) {
-        message = "You Win! 🎉";
+        result = "win";
         wins++;
         userScore++;
         localStorage.setItem("rpsWins", wins.toString());
@@ -32,22 +102,27 @@ function playRound(userChoice) {
         }
     }
     else {
-        message = "Computer Wins! 😢";
+        result = "lose";
         losses++;
         computerScore++;
         localStorage.setItem("rpsLosses", losses.toString());
     }
-    return "You: ".concat(userChoice.toUpperCase(), "  VS  Computer: ").concat(computerChoice.toUpperCase(), "\n\n").concat(message);
+
+    setTimeout(function () {
+        updateBattlefield(userChoice, computerChoice, result);
+        updateScoreDisplay();
+    }, 1000); // 1-second delay
 }
+
 var rockBtn = document.getElementById("rock");
 var paperBtn = document.getElementById("paper");
 var scissorsBtn = document.getElementById("scissors");
 var resetBtn = document.getElementById("reset");
-var resultEl = document.getElementById("result");
 var winsP = document.getElementById("wins");
 var lossesP = document.getElementById("losses");
 var drawsP = document.getElementById("draws");
 var bestP = document.getElementById("bestScore");
+
 function updateScoreDisplay() {
     winsP.textContent = wins.toString();
     lossesP.textContent = losses.toString();
@@ -55,17 +130,15 @@ function updateScoreDisplay() {
     bestP.textContent = bestScore.toString();
 }
 updateScoreDisplay();
+
 rockBtn.addEventListener("click", function () {
-    resultEl.textContent = playRound("rock");
-    updateScoreDisplay();
+    playRound("rock");
 });
 paperBtn.addEventListener("click", function () {
-    resultEl.textContent = playRound("paper");
-    updateScoreDisplay();
+    playRound("paper");
 });
 scissorsBtn.addEventListener("click", function () {
-    resultEl.textContent = playRound("scissors");
-    updateScoreDisplay();
+    playRound("scissors");
 });
 resetBtn.addEventListener("click", function () {
     userScore = 0;
@@ -78,6 +151,8 @@ resetBtn.addEventListener("click", function () {
     localStorage.removeItem("rpsLosses");
     localStorage.removeItem("rpsDraws");
     localStorage.removeItem("bestScore");
-    resultEl.textContent = "Game reset! 🆕";
+    localStorage.removeItem("bestScore");
+
+    resultArea.classList.add("hidden");
     updateScoreDisplay();
 });

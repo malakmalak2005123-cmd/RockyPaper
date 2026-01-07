@@ -17,50 +17,32 @@ function getComputerChoice(): Choice {
   return choices[randomIndex];
 }
 
-function playRound(userChoice: Choice): string {
-  const computerChoice = getComputerChoice();
-  let message: string = "";
-
-  if (userChoice === computerChoice) {
-    message = "It's a Draw! 🤝";
-    draws++;
-    localStorage.setItem("rpsDraws", draws.toString());
-  } else if (
-    (userChoice === "rock" && computerChoice === "scissors") ||
-    (userChoice === "paper" && computerChoice === "rock") ||
-    (userChoice === "scissors" && computerChoice === "paper")
-  ) {
-    message = "You Win! 🎉";
-    wins++;
-    userScore++;
-    localStorage.setItem("rpsWins", wins.toString());
-
-    if (userScore > bestScore) {
-      bestScore = userScore;
-      localStorage.setItem("bestScore", bestScore.toString());
-    }
-  } else {
-    message = "Computer Wins! 😢";
-    losses++;
-    computerScore++;
-    localStorage.setItem("rpsLosses", losses.toString());
-  }
-
-  return `You: ${userChoice.toUpperCase()}  VS  Computer: ${computerChoice.toUpperCase()}
-\n${message}`;
-}
-
+// ---------------- HTML Elements ----------------
 const rockBtn = document.getElementById("rock") as HTMLButtonElement;
 const paperBtn = document.getElementById("paper") as HTMLButtonElement;
 const scissorsBtn = document.getElementById("scissors") as HTMLButtonElement;
 const resetBtn = document.getElementById("reset") as HTMLButtonElement;
 
-const resultEl = document.getElementById("result") as HTMLPreElement;
+// Visual Elements
+const resultArea = document.getElementById("result-area") as HTMLDivElement;
+const userIcon = document.getElementById("user-icon") as HTMLDivElement;
+const computerIcon = document.getElementById("computer-icon") as HTMLDivElement;
+const roundStatus = document.getElementById("round-status") as HTMLHeadingElement;
+const userCard = userIcon.parentElement as HTMLDivElement;
+const computerCard = computerIcon.parentElement as HTMLDivElement;
+
 const winsP = document.getElementById("wins") as HTMLSpanElement;
 const lossesP = document.getElementById("losses") as HTMLSpanElement;
 const drawsP = document.getElementById("draws") as HTMLSpanElement;
 const bestP = document.getElementById("bestScore") as HTMLSpanElement;
 
+const emojis: Record<Choice, string> = {
+  rock: "✊",
+  paper: "✋",
+  scissors: "✌️",
+};
+
+// ---------------- Update Display ----------------
 function updateScoreDisplay() {
   winsP.textContent = wins.toString();
   lossesP.textContent = losses.toString();
@@ -68,23 +50,99 @@ function updateScoreDisplay() {
   bestP.textContent = bestScore.toString();
 }
 
+function showLoadingState() {
+  resultArea.classList.remove("hidden");
+
+  // Set to Rock & Shake
+  userIcon.textContent = "✊";
+  computerIcon.textContent = "✊";
+
+  userCard.classList.add("shuffle");
+  computerCard.classList.add("shuffle");
+
+  // Reset other classes
+  userCard.classList.remove("winner", "loser", "draw");
+  computerCard.classList.remove("winner", "loser", "draw");
+
+  roundStatus.textContent = "Wait... ⏳";
+  roundStatus.style.color = "#94a3b8";
+}
+
+function updateBattlefield(userChoice: Choice, computerChoice: Choice, result: "win" | "lose" | "draw") {
+  resultArea.classList.remove("hidden");
+
+  // Remove Shake
+  userCard.classList.remove("shuffle");
+  computerCard.classList.remove("shuffle");
+
+  // Update Icons
+  userIcon.textContent = emojis[userChoice];
+  computerIcon.textContent = emojis[computerChoice];
+
+  // Reset Classes
+  userCard.classList.remove("winner", "loser", "draw");
+  computerCard.classList.remove("winner", "loser", "draw");
+
+  // Apply Effects & Message
+  if (result === "win") {
+    userCard.classList.add("winner");
+    computerCard.classList.add("loser");
+    roundStatus.textContent = "YOU WIN! 🎉";
+    roundStatus.style.color = "#a855f7"; // Secondary
+  } else if (result === "lose") {
+    userCard.classList.add("loser");
+    computerCard.classList.add("winner");
+    roundStatus.textContent = "YOU LOSE 😢";
+    roundStatus.style.color = "#ef4444"; // Red
+  } else {
+    userCard.classList.add("draw");
+    computerCard.classList.add("draw");
+    roundStatus.textContent = "DRAW 🤝";
+    roundStatus.style.color = "#94a3b8"; // Muted
+  }
+}
+
+const playRound = (userChoice: Choice): void => {
+  showLoadingState(); // Start Animation
+
+  const computerChoice = getComputerChoice();
+  let result: "win" | "lose" | "draw";
+
+  if (userChoice === computerChoice) {
+    result = "draw";
+    draws++;
+    localStorage.setItem("rpsDraws", draws.toString());
+  } else if (
+    (userChoice === "rock" && computerChoice === "scissors") ||
+    (userChoice === "paper" && computerChoice === "rock") ||
+    (userChoice === "scissors" && computerChoice === "paper")
+  ) {
+    result = "win";
+    wins++;
+    userScore++;
+    localStorage.setItem("rpsWins", wins.toString());
+    if (userScore > bestScore) {
+      bestScore = userScore;
+      localStorage.setItem("bestScore", bestScore.toString());
+    }
+  } else {
+    result = "lose";
+    losses++;
+    computerScore++;
+    localStorage.setItem("rpsLosses", losses.toString());
+  }
+
+  setTimeout(() => {
+    updateBattlefield(userChoice, computerChoice, result);
+    updateScoreDisplay();
+  }, 1000);
+};
+
 updateScoreDisplay();
 
-rockBtn.addEventListener("click", () => {
-  resultEl.textContent = playRound("rock");
-  updateScoreDisplay();
-});
-
-paperBtn.addEventListener("click", () => {
-  resultEl.textContent = playRound("paper");
-  updateScoreDisplay();
-});
-
-scissorsBtn.addEventListener("click", () => {
-  resultEl.textContent = playRound("scissors");
-  updateScoreDisplay();
-});
-
+rockBtn.addEventListener("click", () => playRound("rock"));
+paperBtn.addEventListener("click", () => playRound("paper"));
+scissorsBtn.addEventListener("click", () => playRound("scissors"));
 
 resetBtn.addEventListener("click", () => {
   userScore = 0;
@@ -99,6 +157,6 @@ resetBtn.addEventListener("click", () => {
   localStorage.removeItem("rpsDraws");
   localStorage.removeItem("bestScore");
 
-  resultEl.textContent = "Game reset! 🆕";
+  resultArea.classList.add("hidden");
   updateScoreDisplay();
 });
